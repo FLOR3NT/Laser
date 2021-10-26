@@ -4,11 +4,16 @@ using UnityEngine;
 
 public class CubeManager : MonoBehaviour
 {
-    [SerializeField] private float maxHealth = 50;
-    [SerializeField] private float currentHealth = 50;
-    [SerializeField] private float maxVelocity = 3;
-    [SerializeField] private float addedScore = 50;
+    private float maxHealth = 50;
+    private float currentHealth = 50;
+    private float maxVelocity = 3;
+    private float addedScore = 1;
+    [SerializeField] private Material material;
+    [SerializeField] private Color baseColor;
     [SerializeField] private GameManager gameManager;
+    [SerializeField] private Boost boost = Boost.None;
+    [SerializeField] private Spawner currentSpawner;
+
     private Rigidbody rb = null;
     private Vector3 forceDir;
 
@@ -25,6 +30,21 @@ public class CubeManager : MonoBehaviour
         set => rb = value; 
     }
 
+    public Material Material
+    {
+        get
+        {
+            if (material == null)
+            {
+                material = GetComponent<MeshRenderer>().material;
+            }
+            return material;
+        }
+        set => material = value;
+    }
+
+    public Spawner CurrentSpawner { get => currentSpawner; set => currentSpawner = value; }
+    public Boost Boost { get => boost; set => boost = value; }
     public GameManager GameManager { get => gameManager; set => gameManager = value; }
     public float MaxHealth { get => maxHealth; set => maxHealth = value; }
     public float CurrentHealth { get => currentHealth; set => currentHealth = value; }
@@ -44,11 +64,22 @@ public class CubeManager : MonoBehaviour
     public void ReceiveDamages(float damages)
     {
         currentHealth -= damages;
+        Material.color = Color.Lerp(baseColor, Color.black, (maxHealth - currentHealth) / maxHealth);
         if (currentHealth <= 0)
         {
+            if (currentSpawner != null)
+            {
+                currentSpawner.IsUse = false;
+            }
             gameManager.Score += addedScore;
+            gameManager.Player.AddBoost(boost);            
             gameManager.DisableCube(this);
         }
+    }
+
+    public void SetColor(Color color)
+    {
+        Material.color = baseColor = color;
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -61,6 +92,7 @@ public class CubeManager : MonoBehaviour
 
     private void OnCollisionExit(Collision collision)
     {
+
         if (collision.collider.tag == "Spawner")
         {
             collision.collider.GetComponent<Spawner>().IsUse = false;
@@ -71,7 +103,14 @@ public class CubeManager : MonoBehaviour
     {
         if (other.tag == "Spawner")
         {
-            other.GetComponent<Spawner>().IsUse = false;
+            currentSpawner.IsUse = false;
         }
     }
 }
+
+public enum Boost
+{
+    None,
+    AttackSpeed,
+    Damage
+} 

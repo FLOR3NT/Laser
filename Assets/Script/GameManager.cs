@@ -9,9 +9,14 @@ public class GameManager : MonoBehaviour
 
     private float newspawn = 0;
     private int cubeToSpawn = 0;
+    private int cubeSpawned = 0;
     [SerializeField] private List<Spawner> allSpawners = new List<Spawner>();
     private List<Spawner> avaibleSpawners = new List<Spawner>();
     [SerializeField] private float spawnFrequency = 1;
+    [SerializeField] private Color[] colorCubes = new Color[9];
+    [SerializeField] private Color colorBoost = Color.green;
+
+
 
     [SerializeField] private CubeManager cubePrefab;
     private List<CubeManager> usedCube = new List<CubeManager>();
@@ -20,19 +25,21 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Transform unusedCubeParent;
 
     private float score = 0;
+    [SerializeField]private float step = 1;
     [SerializeField] private Text scoreText;
     [SerializeField] private Player player;
 
     public List<Spawner> AvaibleSpawners { get => avaibleSpawners; set => avaibleSpawners = value; }
     public Player Player { get => player; set => player = value; }
-    public float Score 
-    { 
+    public float Score
+    {
         get => score;
         set
         {
             score = value;
             scoreText.text = value.ToString();
-        } 
+            SetStep();
+        }
     }
 
     private void Start()
@@ -48,10 +55,11 @@ public class GameManager : MonoBehaviour
             cubeToSpawn++;
         }
 
-        if (cubeToSpawn>0)
+        if (cubeToSpawn > 0)
         {
             if (SpawnCube())
             {
+                cubeSpawned++;
                 cubeToSpawn--;
             }
         }
@@ -79,12 +87,34 @@ public class GameManager : MonoBehaviour
             }
 
             usedCube.Add(newCube);
+            newCube.CurrentSpawner = avaibleSpawners[randomSpot];
             newCube.transform.position = avaibleSpawners[randomSpot].transform.position;
-            newCube.transform.eulerAngles = Vector3.up * Random.Range(0,360);
+            newCube.transform.eulerAngles = Vector3.up * Random.Range(0, 360);
+            float roundStep = Mathf.Round(Mathf.Exp(step/100));
+            Debug.Log(step + " | " + Mathf.Exp(step)/100 + " | " + Mathf.Round(Mathf.Exp(step)));
+            if (roundStep < 1)
+            {
+                roundStep = 1;
+            }
+
+            if (cubeSpawned % 5 == 0)
+            {
+                newCube.Boost = randomSpot % 2 == 0 ? Boost.Damage : Boost.AttackSpeed;
+                newCube.MaxHealth = 1;
+                newCube.MaxVelocity = 5;
+                newCube.AddedScore = 5 * roundStep;
+                newCube.SetColor(colorBoost);
+            }
+            else
+            {
+                newCube.Boost = Boost.None;
+                newCube.MaxHealth = 50 + 50 * ((roundStep - 1) / 2);
+                newCube.MaxVelocity = 3 + 3 * ((roundStep - 1) / 2);
+                newCube.AddedScore = 5 * roundStep;
+                newCube.SetColor(colorCubes[((int)((roundStep % 9) - 1))]);
+            }
+            newCube.Rb.velocity = Vector3.zero;
             newCube.CurrentHealth = newCube.MaxHealth;
-            //newCube.MaxHealth = 
-            //newCube.MaxVelocity = 
-            //newCube.AddedScore = 
             avaibleSpawners[randomSpot].IsUse = true;
             return true;
         }
@@ -106,5 +136,14 @@ public class GameManager : MonoBehaviour
     {
         Scene scene = SceneManager.GetActiveScene();
         SceneManager.LoadScene(scene.name);
+    }
+
+    public void SetStep()
+    {
+        step = Mathf.Pow(score, 1F / 2F);
+        if (step < 1)
+        {
+            step = 1;
+        }
     }
 }

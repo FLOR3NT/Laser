@@ -8,8 +8,12 @@ public class Player : MonoBehaviour
     
 
     [SerializeField] private float currentHealth = 1;
-    [SerializeField] private float attackSpeed = 1F;
-    [SerializeField] private float damage = 20F;
+    [SerializeField] private float baseAttackSpeed = 1F;
+    private float boostAttackSpeed = 0F;
+    private float currentAttackSpeed = 2F;
+    [SerializeField] private float baseDamage = 20F;
+    private float boostDamage = 0F;
+    private float currentDamage = 20F;
     [SerializeField] private Transform cylinder;
     [SerializeField] private GameManager gameManager = default;
     private List<LaserShot> usedLaserShot = new List<LaserShot>();
@@ -31,7 +35,7 @@ public class Player : MonoBehaviour
             mouseWorldPos.y = 1;
             transform.LookAt(mouseWorldPos);
 
-            if (Time.time - lastShot > attackSpeed)
+            if (Time.time - lastShot > 1/currentAttackSpeed)
             {
                 LaserShot(mouseWorldPos);
                 lastShot = Time.time;
@@ -71,7 +75,7 @@ public class Player : MonoBehaviour
         }
 
         usedLaserShot.Add(newLaserShot);
-        newLaserShot.Damage = damage;
+        newLaserShot.Damage = currentDamage;
         newLaserShot.transform.position = cylinder.position;
         newLaserShot.transform.forward = laserRay;
     }  
@@ -82,5 +86,23 @@ public class Player : MonoBehaviour
         unusedLaserShot.Add(laserShot);
         laserShot.transform.parent = unusedLaserShotParent;
         laserShot.gameObject.SetActive(false);
+    }
+
+    public void AddBoost(Boost boost)
+    {
+        switch (boost)
+        {
+            case Boost.Damage:
+                boostDamage += 0.25F;
+                currentDamage = baseDamage + baseDamage * boostDamage;
+                break;
+            case Boost.AttackSpeed:
+
+                boostAttackSpeed += 0.25F;
+                currentAttackSpeed = baseAttackSpeed + baseAttackSpeed * boostAttackSpeed;
+                break;
+            case Boost.None:
+                break;
+        }
     }
 }
