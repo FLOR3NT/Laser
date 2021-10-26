@@ -7,7 +7,8 @@ public class CubeManager : MonoBehaviour
     [SerializeField] private float maxHealth = 50;
     [SerializeField] private float currentHealth = 50;
     [SerializeField] private float maxVelocity = 3;
-    [SerializeField] private Player player;
+    [SerializeField] private float addedScore = 50;
+    [SerializeField] private GameManager gameManager;
     private Rigidbody rb = null;
     private Vector3 forceDir;
 
@@ -24,11 +25,15 @@ public class CubeManager : MonoBehaviour
         set => rb = value; 
     }
 
-    public Player Player { get => player; set => player = value; }
+    public GameManager GameManager { get => gameManager; set => gameManager = value; }
+    public float MaxHealth { get => maxHealth; set => maxHealth = value; }
+    public float CurrentHealth { get => currentHealth; set => currentHealth = value; }
+    public float MaxVelocity { get => maxVelocity; set => maxVelocity = value; }
+    public float AddedScore { get => addedScore; set => addedScore = value; }
 
     void Update()
     {
-        forceDir = (Player.transform.position - transform.position).normalized;
+        forceDir = (GameManager.Player.transform.position - transform.position).normalized;
         this.Rb.AddForce(forceDir, ForceMode.Force);
         if (Rb.velocity.magnitude > maxVelocity)
         {
@@ -41,7 +46,8 @@ public class CubeManager : MonoBehaviour
         currentHealth -= damages;
         if (currentHealth <= 0)
         {
-            Destroy(gameObject);
+            gameManager.Score += addedScore;
+            gameManager.DisableCube(this);
         }
     }
 
@@ -49,7 +55,7 @@ public class CubeManager : MonoBehaviour
     {
         if (collision.collider.tag == "Player")
         {
-            Player.ReceiveDamages(1);
+            GameManager.Player.ReceiveDamages(1);
         }
     }
 
@@ -58,6 +64,14 @@ public class CubeManager : MonoBehaviour
         if (collision.collider.tag == "Spawner")
         {
             collision.collider.GetComponent<Spawner>().IsUse = false;
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.tag == "Spawner")
+        {
+            other.GetComponent<Spawner>().IsUse = false;
         }
     }
 }

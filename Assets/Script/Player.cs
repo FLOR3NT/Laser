@@ -5,15 +5,18 @@ using UnityEngine;
 public class Player : MonoBehaviour
 {
     private float lastShot = -1;
+    
 
     [SerializeField] private float currentHealth = 1;
     [SerializeField] private float attackSpeed = 1F;
-    [SerializeField] private float damages = 20F;
-    [SerializeField] private LineRenderer lineRenderer;
+    [SerializeField] private float damage = 20F;
     [SerializeField] private Transform cylinder;
-    [SerializeField] private Color laserOnCColor;
-    [SerializeField] private Color laserOffCColor;
     [SerializeField] private GameManager gameManager = default;
+    private List<LaserShot> usedLaserShot = new List<LaserShot>();
+    [SerializeField] private Transform usedLaserShotParent;  
+    private List<LaserShot> unusedLaserShot = new List<LaserShot>();
+    [SerializeField] private Transform unusedLaserShotParent;
+    [SerializeField] private LaserShot laserPrefab;
 
     private void Start()
     {
@@ -30,7 +33,7 @@ public class Player : MonoBehaviour
 
             if (Time.time - lastShot > attackSpeed)
             {
-                StartCoroutine(LaserShot(mouseWorldPos));
+                LaserShot(mouseWorldPos);
                 lastShot = Time.time;
             }
         }
@@ -45,39 +48,39 @@ public class Player : MonoBehaviour
         }
     }
 
-
-    private IEnumerator LaserShot(Vector3 mouseWorldPos)
+    private void LaserShot(Vector3 mouseWorldPos)
     {
-        yield return 0;
 
         Vector3 startPos = cylinder.position;
         startPos.y = 0.5F;
-        lineRenderer.SetPosition(0, cylinder.position);
         mouseWorldPos.y = startPos.y;
         Vector3 laserRay = (mouseWorldPos - startPos).normalized;
 
-        RaycastHit hit;
-        if (Physics.Raycast(startPos, laserRay, out hit, 30, ~LayerMask.NameToLayer("Hittable")))
+        LaserShot newLaserShot;
+        if (unusedLaserShot.Count > 0)
         {
-            Vector3 endPos = hit.point;
-            endPos.y = cylinder.position.y;
-            lineRenderer.SetPosition(1, endPos);
-            hit.collider.GetComponent<CubeManager>().ReceiveDamages(damages);
+            newLaserShot = unusedLaserShot[0];
+            unusedLaserShot.Remove(newLaserShot);
+            newLaserShot.transform.parent = usedLaserShotParent;
+            newLaserShot.gameObject.SetActive(true);
         }
         else
         {
-            lineRenderer.SetPosition(1, cylinder.position + laserRay * 30);
+            newLaserShot = Instantiate(laserPrefab, usedLaserShotParent);
+            newLaserShot.Player = this;
         }
 
-        lineRenderer.material.SetColor("_Color", laserOnCColor);
+        usedLaserShot.Add(newLaserShot);
+        newLaserShot.Damage = damage;
+        newLaserShot.transform.position = cylinder.position;
+        newLaserShot.transform.forward = laserRay;
+    }  
 
-        float endTime = Time.time + 0.15F;
-        while (Time.time < endTime)
-        {
-            lineRenderer.material.SetColor("_Color", Color.Lerp(laserOnCColor, laserOffCColor, (endTime - Time.time) / 0.1F));
-            yield return 0;
-        }
-        lineRenderer.material.SetColor("_Color", laserOffCColor);
-
+    public void EndLaser(LaserShot laserShot)
+    {
+        usedLaserShot.Remove(laserShot);
+        unusedLaserShot.Add(laserShot);
+        laserShot.transform.parent = unusedLaserShotParent;
+        laserShot.gameObject.SetActive(false);
     }
 }
