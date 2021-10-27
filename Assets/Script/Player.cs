@@ -63,6 +63,10 @@ public class Player : MonoBehaviour
 
     public void ReceiveDamages(float damages)
     {
+        if (!gameManager.IsPlaying)
+        {
+            return;
+        }
         currentHealth -= damages;
         if (currentHealth <= 0)
         {

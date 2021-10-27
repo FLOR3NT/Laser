@@ -34,7 +34,7 @@ public class GameManager : MonoBehaviour
         get => score;
         set
         {
-            score = value + Mathf.Round(value * dataManager.BonusScoring/10);
+            score = value;
             scoreText.text = value.ToString();
             SetStep();
         }
@@ -157,7 +157,7 @@ public class GameManager : MonoBehaviour
         {
             dataManager.MaxScore = score;
         }
-        dataManager.TotalPoint += Mathf.Round(score / 5);
+        dataManager.TotalPoint += Mathf.Round(score / 5 + score / 5 * dataManager.BonusPoint / 10);
         Stop();
         menuManager.OpenMenu();
     }
