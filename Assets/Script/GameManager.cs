@@ -6,11 +6,14 @@ public class GameManager : MonoBehaviour
 {
     private bool isPlaying = false;
     private float newspawn = 0;
+    private float nextIncreaseSpawn = 0;
     private int cubeToSpawn = 0;
     private int cubeSpawned = 0;
     [SerializeField] private List<Spawner> allSpawners = new List<Spawner>();
     private List<Spawner> avaibleSpawners = new List<Spawner>();
     [SerializeField] private float spawnFrequency = 1;
+    [SerializeField] private float increaseSpawnFrequency = 3;
+    [SerializeField] private int boostFrequency = 20;
     [SerializeField] private Color[] colorCubes = new Color[9];
     [SerializeField] private Color colorBoost = Color.green;
 
@@ -22,6 +25,7 @@ public class GameManager : MonoBehaviour
 
     private float score = 0;
     [SerializeField] private float step = 1;
+    private float lastStep = 1;
     [SerializeField] private Text scoreText;
     [SerializeField] private Player player;
     [SerializeField] private DataManager dataManager;
@@ -53,9 +57,16 @@ public class GameManager : MonoBehaviour
         {
             return;
         }
-        if (Time.time - newspawn >= spawnFrequency)
+
+        if (nextIncreaseSpawn - Time.time <= 0)
         {
-            newspawn = Time.time + spawnFrequency;
+            nextIncreaseSpawn = Time.time + increaseSpawnFrequency;
+            spawnFrequency += spawnFrequency * 0.1F;
+        }
+
+        if (newspawn - Time.time <= 0)
+        {
+            newspawn = Time.time + 1 / spawnFrequency;
             cubeToSpawn++;
         }
 
@@ -73,6 +84,7 @@ public class GameManager : MonoBehaviour
     {
         newspawn = 0;
         cubeToSpawn = cubeSpawned = 0;
+        spawnFrequency = 1;
         for (int id = 0; id < usedCubes.Count; id++)
         {
             DisableCube(usedCubes[id]);
@@ -83,7 +95,7 @@ public class GameManager : MonoBehaviour
         player.Initialize();
         isPlaying = true;
     }
-    
+
     private bool SpawnCube()
     {
         if (avaibleSpawners.Count > 0)
@@ -109,28 +121,22 @@ public class GameManager : MonoBehaviour
             newCube.CurrentSpawner = avaibleSpawners[randomSpot];
             newCube.transform.position = avaibleSpawners[randomSpot].transform.position;
             newCube.transform.eulerAngles = Vector3.up * Random.Range(0, 360);
-            float roundStep = Mathf.Round(Mathf.Exp(step/100));
-            Debug.Log(step + " | " + Mathf.Exp(step)/100 + " | " + Mathf.Round(Mathf.Exp(step)));
-            if (roundStep < 1)
-            {
-                roundStep = 1;
-            }
 
-            if (cubeSpawned % 5 == 0)
+            if (cubeSpawned % boostFrequency == 0)
             {
                 newCube.Boost = randomSpot % 2 == 0 ? Boost.Damage : Boost.AttackSpeed;
                 newCube.MaxHealth = 1;
                 newCube.MaxVelocity = 5;
-                newCube.AddedScore = 5 * roundStep;
+                newCube.AddedScore = Mathf.Round(5 + 5 * (step - 1));
                 newCube.SetColor(colorBoost);
             }
             else
             {
                 newCube.Boost = Boost.None;
-                newCube.MaxHealth = 50 + 50 * ((roundStep - 1) / 2);
-                newCube.MaxVelocity = 3 + 3 * ((roundStep - 1) / 2);
-                newCube.AddedScore = 5 * roundStep;
-                newCube.SetColor(colorCubes[((int)((roundStep % 9) - 1))]);
+                newCube.MaxHealth = 50 + 50 * ((step - 1) / 2);
+                newCube.MaxVelocity = 3 + Mathf.Log(step + 1);
+                newCube.AddedScore = Mathf.Round(5 + 5 * (step - 1));
+                newCube.SetColor(colorCubes[(int)(step % 9)]);
             }
             newCube.Rb.velocity = Vector3.zero;
             newCube.CurrentHealth = newCube.MaxHealth;
@@ -175,10 +181,16 @@ public class GameManager : MonoBehaviour
 
     public void SetStep()
     {
-        step = Mathf.Pow(score, 1F / 2F);
+        step = Mathf.Round(Mathf.Log(score+1, 2F));
         if (step < 1)
         {
             step = 1;
+        }
+        if (lastStep != step)
+        {
+            lastStep = step;
+            spawnFrequency = 1;
+            nextIncreaseSpawn = Time.time + increaseSpawnFrequency;
         }
     }
 }

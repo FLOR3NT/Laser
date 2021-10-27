@@ -39,6 +39,14 @@ public class MenuManager : MonoBehaviour
         OpenMenu();
     }
 
+    private void OnApplicationFocus(bool focus)
+    {
+        if (!gameManager.IsPlaying)
+        {
+            OpenPopup();
+        }
+    }
+
     public void OpenPopup()
     {
         if (dataManager.LastGame == "" || dataManager.BonusPassivePoint == 0)
@@ -46,13 +54,13 @@ public class MenuManager : MonoBehaviour
             popupGO.SetActive(false);
         }
         else
-        {
-            
+        {            
             float newPoint = Mathf.Round(Mathf.Log((float)(DateTime.Now - DateTime.Parse(dataManager.LastGame)).TotalMinutes * Mathf.Exp(dataManager.BonusPassivePoint)));
             addedPointText.text = newPoint.ToString();
             dataManager.TotalPoint += newPoint;
             popupGO.SetActive(true);
         }
+        dataManager.LastGame = DateTime.Now.ToString();
     }
 
     public void ClosePopup()
@@ -88,7 +96,7 @@ public class MenuManager : MonoBehaviour
 
     public float GetCost(float bonusLevel)
     {
-        float value = bonusLevel * 2;
+        float value = Mathf.Round(Mathf.Pow(bonusLevel + 1, 1.8F));
         return value;
     }
 
@@ -104,9 +112,9 @@ public class MenuManager : MonoBehaviour
 
     public void SpeedFireButton()
     {
-        dataManager.UsedPoint += dataManager.BonusAttackSpeed * 2;
+        dataManager.UsedPoint += GetCost(dataManager.BonusAttackSpeed);
         dataManager.BonusAttackSpeed++;
-        speedFireButtonText.text = (dataManager.BonusAttackSpeed * 2).ToString();
+        speedFireButtonText.text = GetCost(dataManager.BonusAttackSpeed).ToString();
         speedFireText.text = speedFireString + dataManager.BonusAttackSpeed;
         remaininPointText.text = (dataManager.TotalPoint - dataManager.UsedPoint).ToString();
         CheckBonusInteractible();
@@ -114,9 +122,9 @@ public class MenuManager : MonoBehaviour
 
     public void DamageButton()
     {
-        dataManager.UsedPoint += dataManager.BonusDamage * 2;
+        dataManager.UsedPoint += GetCost(dataManager.BonusDamage);
         dataManager.BonusDamage++;
-        damageButtonText.text = (dataManager.BonusDamage * 2).ToString();
+        damageButtonText.text = GetCost(dataManager.BonusDamage).ToString();
         damageText.text = damageString + dataManager.BonusDamage;
         remaininPointText.text = (dataManager.TotalPoint - dataManager.UsedPoint).ToString();
         CheckBonusInteractible();
@@ -124,9 +132,9 @@ public class MenuManager : MonoBehaviour
 
     public void PointButton()
     {
-        dataManager.UsedPoint += dataManager.BonusPoint * 2;
+        dataManager.UsedPoint += GetCost(dataManager.BonusPoint);
         dataManager.BonusPoint++;
-        pointButtonText.text = (dataManager.BonusPoint * 2).ToString();
+        pointButtonText.text = GetCost(dataManager.BonusPoint).ToString();
         pointText.text = pointString + dataManager.BonusPoint;
         remaininPointText.text = (dataManager.TotalPoint - dataManager.UsedPoint).ToString();
         CheckBonusInteractible();
@@ -136,7 +144,7 @@ public class MenuManager : MonoBehaviour
     {
         dataManager.UsedPoint += dataManager.BonusPassivePoint * 2;
         dataManager.BonusPassivePoint++;
-        passivePointButtonText.text = (dataManager.BonusPassivePoint * 2).ToString();
+        passivePointButtonText.text = GetCost(dataManager.BonusPassivePoint).ToString();
         passivePointText.text = passivePointString + dataManager.BonusPassivePoint;
         remaininPointText.text = (dataManager.TotalPoint - dataManager.UsedPoint).ToString();
         CheckBonusInteractible();

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Player : MonoBehaviour
 {
@@ -21,6 +22,9 @@ public class Player : MonoBehaviour
     private List<LaserShot> unusedLaserShots = new List<LaserShot>();
     [SerializeField] private Transform unusedLaserShotParent;
     [SerializeField] private LaserShot laserPrefab;
+
+    [SerializeField] private Text powerText;
+    [SerializeField] private Text speedText;
 
     private void Update()
     {
@@ -47,9 +51,11 @@ public class Player : MonoBehaviour
     {
         currentHealth = 1;
         boostAttackSpeed = 0F;
-        currentAttackSpeed = baseAttackSpeed + baseAttackSpeed * dataManager.BonusAttackSpeed / 10;
         boostDamage = 0F;
+        currentAttackSpeed = baseAttackSpeed + baseAttackSpeed * dataManager.BonusAttackSpeed / 10;
         currentDamage = baseDamage + baseDamage * dataManager.BonusDamage / 10;
+        powerText.text = "Power level : " + boostDamage;
+        speedText.text = "Speed level : " + boostAttackSpeed;
     }
 
     public void Stop()
@@ -115,15 +121,17 @@ public class Player : MonoBehaviour
         switch (boost)
         {
             case Boost.Damage:
-                boostDamage += 0.25F;
-                currentDamage = baseDamage + baseDamage * boostDamage;
-                currentDamage += currentDamage * dataManager.BonusAttackSpeed / 10;
+                boostDamage++;
+                currentDamage = baseDamage + baseDamage * boostDamage * 0.25F;
+                currentDamage += currentDamage * dataManager.BonusDamage / 10;
+                powerText.text = "Power level : " + boostDamage;
                 break;
 
             case Boost.AttackSpeed:
-                boostAttackSpeed += 0.25F;
-                currentAttackSpeed = baseAttackSpeed + baseAttackSpeed * boostAttackSpeed;
-                currentAttackSpeed += currentAttackSpeed * dataManager.BonusDamage / 10;
+                boostAttackSpeed++;
+                currentAttackSpeed = baseAttackSpeed + baseAttackSpeed * boostAttackSpeed * 0.25F;
+                currentAttackSpeed += currentAttackSpeed * dataManager.BonusAttackSpeed / 10;
+                speedText.text = "Speed level : " + boostAttackSpeed;
                 break;
 
             case Boost.None:

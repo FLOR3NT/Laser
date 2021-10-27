@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a662b754c023eb4f9f744e1523cae99, type: 3}
   m_Name: DataManager
   m_EditorClassIdentifier: 
-  maxScore: 50
-  bonusAttackSpeed: 2
-  bonusDamage: 3
-  bonusPoint: 4
-  bonusPassivePoint: 5
-  totalPoint: 70
-  usedPoint: 40
-  lastGame: 27/10/2021 15:50:37
+  maxScore: 0
+  bonusAttackSpeed: 0
+  bonusDamage: 0
+  bonusPoint: 0
+  bonusPassivePoint: 0
+  totalPoint: 0
+  usedPoint: 0
+  lastGame: 
