@@ -53,6 +53,11 @@ public class CubeManager : MonoBehaviour
 
     void Update()
     {
+        if (!gameManager.IsPlaying)
+        {
+            return;
+        }
+
         forceDir = (GameManager.Player.transform.position - transform.position).normalized;
         this.Rb.AddForce(forceDir, ForceMode.Force);
         if (Rb.velocity.magnitude > maxVelocity)

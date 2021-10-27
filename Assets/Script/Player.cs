@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,20 +14,21 @@ public class Player : MonoBehaviour
     private float boostDamage = 0F;
     private float currentDamage = 20F;
     [SerializeField] private Transform cylinder;
+    [SerializeField] private DataManager dataManager = default;
     [SerializeField] private GameManager gameManager = default;
-    private List<LaserShot> usedLaserShot = new List<LaserShot>();
+    private List<LaserShot> usedLaserShots = new List<LaserShot>();
     [SerializeField] private Transform usedLaserShotParent;  
-    private List<LaserShot> unusedLaserShot = new List<LaserShot>();
+    private List<LaserShot> unusedLaserShots = new List<LaserShot>();
     [SerializeField] private Transform unusedLaserShotParent;
     [SerializeField] private LaserShot laserPrefab;
 
-    private void Start()
-    {
-        gameManager = FindObjectOfType<GameManager>();
-    }
-
     private void Update()
     {
+        if (!gameManager.IsPlaying)
+        {
+            return;
+        }
+
         if (Input.GetMouseButton(0))
         {
             Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -40,6 +40,24 @@ public class Player : MonoBehaviour
                 LaserShot(mouseWorldPos);
                 lastShot = Time.time;
             }
+        }
+    }
+
+    public void Initialize()
+    {
+        currentHealth = 1;
+        boostAttackSpeed = 0F;
+        currentAttackSpeed = baseAttackSpeed + baseAttackSpeed * dataManager.BonusAttackSpeed / 10;
+        boostDamage = 0F;
+        currentDamage = baseDamage + baseDamage * dataManager.BonusDamage / 10;
+    }
+
+    public void Stop()
+    {
+        for (int id = 0; id > usedLaserShots.Count; id++)
+        {
+            EndLaser(usedLaserShots[id]);
+            id--;
         }
     }
 
@@ -61,10 +79,10 @@ public class Player : MonoBehaviour
         Vector3 laserRay = (mouseWorldPos - startPos).normalized;
 
         LaserShot newLaserShot;
-        if (unusedLaserShot.Count > 0)
+        if (unusedLaserShots.Count > 0)
         {
-            newLaserShot = unusedLaserShot[0];
-            unusedLaserShot.Remove(newLaserShot);
+            newLaserShot = unusedLaserShots[0];
+            unusedLaserShots.Remove(newLaserShot);
             newLaserShot.transform.parent = usedLaserShotParent;
             newLaserShot.gameObject.SetActive(true);
         }
@@ -74,7 +92,7 @@ public class Player : MonoBehaviour
             newLaserShot.Player = this;
         }
 
-        usedLaserShot.Add(newLaserShot);
+        usedLaserShots.Add(newLaserShot);
         newLaserShot.Damage = currentDamage;
         newLaserShot.transform.position = cylinder.position;
         newLaserShot.transform.forward = laserRay;
@@ -82,8 +100,8 @@ public class Player : MonoBehaviour
 
     public void EndLaser(LaserShot laserShot)
     {
-        usedLaserShot.Remove(laserShot);
-        unusedLaserShot.Add(laserShot);
+        usedLaserShots.Remove(laserShot);
+        unusedLaserShots.Add(laserShot);
         laserShot.transform.parent = unusedLaserShotParent;
         laserShot.gameObject.SetActive(false);
     }
@@ -95,12 +113,15 @@ public class Player : MonoBehaviour
             case Boost.Damage:
                 boostDamage += 0.25F;
                 currentDamage = baseDamage + baseDamage * boostDamage;
+                currentDamage += currentDamage * dataManager.BonusAttackSpeed / 10;
                 break;
-            case Boost.AttackSpeed:
 
+            case Boost.AttackSpeed:
                 boostAttackSpeed += 0.25F;
                 currentAttackSpeed = baseAttackSpeed + baseAttackSpeed * boostAttackSpeed;
+                currentAttackSpeed += currentAttackSpeed * dataManager.BonusDamage / 10;
                 break;
+
             case Boost.None:
                 break;
         }

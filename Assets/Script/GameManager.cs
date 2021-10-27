@@ -1,12 +1,10 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
-
+    private bool isPlaying = false;
     private float newspawn = 0;
     private int cubeToSpawn = 0;
     private int cubeSpawned = 0;
@@ -16,18 +14,18 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Color[] colorCubes = new Color[9];
     [SerializeField] private Color colorBoost = Color.green;
 
-
-
     [SerializeField] private CubeManager cubePrefab;
-    private List<CubeManager> usedCube = new List<CubeManager>();
+    private List<CubeManager> usedCubes = new List<CubeManager>();
     [SerializeField] private Transform usedCubeParent;
-    private List<CubeManager> unusedCube = new List<CubeManager>();
+    private List<CubeManager> unusedCubes = new List<CubeManager>();
     [SerializeField] private Transform unusedCubeParent;
 
     private float score = 0;
-    [SerializeField]private float step = 1;
+    [SerializeField] private float step = 1;
     [SerializeField] private Text scoreText;
     [SerializeField] private Player player;
+    [SerializeField] private DataManager dataManager;
+    [SerializeField] private MenuManager menuManager;
 
     public List<Spawner> AvaibleSpawners { get => avaibleSpawners; set => avaibleSpawners = value; }
     public Player Player { get => player; set => player = value; }
@@ -36,11 +34,13 @@ public class GameManager : MonoBehaviour
         get => score;
         set
         {
-            score = value;
+            score = value + Mathf.Round(value * dataManager.BonusScoring/10);
             scoreText.text = value.ToString();
             SetStep();
         }
     }
+
+    public bool IsPlaying { get => isPlaying; set => isPlaying = value; }
 
     private void Start()
     {
@@ -49,6 +49,10 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
+        if (!isPlaying)
+        {
+            return;
+        }
         if (Time.time - newspawn >= spawnFrequency)
         {
             newspawn = Time.time + spawnFrequency;
@@ -65,6 +69,21 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void Initialize()
+    {
+        newspawn = 0;
+        cubeToSpawn = cubeSpawned = 0;
+        for (int id = 0; id < usedCubes.Count; id++)
+        {
+            DisableCube(usedCubes[id]);
+            id--;
+        }
+        Score = 0;
+
+        player.Initialize();
+        isPlaying = true;
+    }
+    
     private bool SpawnCube()
     {
         if (avaibleSpawners.Count > 0)
@@ -73,10 +92,10 @@ public class GameManager : MonoBehaviour
             Transform spawner = avaibleSpawners[randomSpot].transform;
 
             CubeManager newCube;
-            if (unusedCube.Count > 0)
+            if (unusedCubes.Count > 0)
             {
-                newCube = unusedCube[0];
-                unusedCube.Remove(newCube);
+                newCube = unusedCubes[0];
+                unusedCubes.Remove(newCube);
                 newCube.transform.parent = usedCubeParent;
                 newCube.gameObject.SetActive(true);
             }
@@ -86,7 +105,7 @@ public class GameManager : MonoBehaviour
                 newCube.GameManager = this;
             }
 
-            usedCube.Add(newCube);
+            usedCubes.Add(newCube);
             newCube.CurrentSpawner = avaibleSpawners[randomSpot];
             newCube.transform.position = avaibleSpawners[randomSpot].transform.position;
             newCube.transform.eulerAngles = Vector3.up * Random.Range(0, 360);
@@ -126,17 +145,33 @@ public class GameManager : MonoBehaviour
 
     public void DisableCube(CubeManager cube)
     {
-        usedCube.Remove(cube);
-        unusedCube.Add(cube);
+        usedCubes.Remove(cube);
+        unusedCubes.Add(cube);
         cube.transform.parent = unusedCubeParent;
         cube.gameObject.SetActive(false);
     }
 
     public void Lose()
     {
-        Scene scene = SceneManager.GetActiveScene();
-        SceneManager.LoadScene(scene.name);
+        if (score > dataManager.MaxScore)
+        {
+            dataManager.MaxScore = score;
+        }
+        dataManager.TotalPoint += Mathf.Round(score / 5);
+        Stop();
+        menuManager.OpenMenu();
     }
+
+    public void Stop()
+    {
+        isPlaying = false;
+        for (int id = 0; id > usedCubes.Count; id++)
+        {
+            usedCubes[id].Rb.velocity = Vector3.zero;
+        }
+        player.Stop();
+    }
+
 
     public void SetStep()
     {
